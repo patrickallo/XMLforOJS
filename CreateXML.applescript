@@ -4,8 +4,8 @@ choose folder with prompt "Choose a folder" default location (path to desktop as
 set my_folder to result
 tell application "Finder" to set folder_name to the name of (folder my_folder)
 if (count (every character in folder_name)) > 5 then
-	set issue_number to ((text 3 thru 5 of folder_name) as number) Â
-		& "-" & Â
+	set issue_number to ((text 3 thru 5 of folder_name) as number) Â¬
+		& "-" & Â¬
 		((text 7 thru -1 of folder_name) as number) as string
 else
 	set issue_number to (((text 3 thru 5 of folder_name) as number) as string)
@@ -90,8 +90,8 @@ tell application "Finder"
 				set info_tag to "<country>"
 				set cl_info_tag to "</country>"
 			end if
-			set this_xml to (("<title>" & this_title & "</title>" & return & "<author> <first name> " & first_name & " </first name><middle name> " & middle_name & "</middle name><last name>" & last_name & "</last name></author>" & return & Â
-				info_tag & add_info & cl_info_tag & return & Â
+			set this_xml to (("<title>" & this_title & "</title>" & return & "<author> <first name> " & first_name & " </first name><middle name> " & middle_name & "</middle name><last name>" & last_name & "</last name></author>" & return & Â¬
+				info_tag & add_info & cl_info_tag & return & Â¬
 				"<pages>" & first_page as string) & "-" & first_page + (no_pages - 1) as string) & "</pages>"
 			display dialog "Confirm XML" buttons "OK" default button "OK" default answer this_xml
 			close document 1
