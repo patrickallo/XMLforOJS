@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>documents</key>
+	<array>
+		<dict>
+			<key>filename</key>
+			<string>CreateXML.applescript</string>
+		</dict>
+		<dict>
+			<key>filename</key>
+			<string>OCRbatch.applescript</string>
+		</dict>
+		<dict>
+			<key>filename</key>
+			<string>ToDo.txt</string>
+		</dict>
+	</array>
+	<key>fileHierarchyDrawerWidth</key>
+	<integer>200</integer>
+	<key>metaData</key>
+	<dict/>
+	<key>showFileHierarchyDrawer</key>
+	<true/>
+	<key>windowFrame</key>
+	<string>{{4, 0}, {1147, 1178}}</string>
+</dict>
+</plist>

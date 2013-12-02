@@ -2,6 +2,7 @@ TO DO FOR APPLESCRIPT "CREATEXML"
 =================================
 
 - add writing to log-file to keep track of progress
+	=> TWO ALTERNATIVES: use properties instead of log-file; set comment to folders, and filter on that basis.
 	=> log is list of folder_names
 	=> my_folder is set by taking the folder with index +1 of index of last folder_name on log
 	=> initial prompt for choosing folder is then set to parent-folder of issue
@@ -17,3 +18,8 @@ TO DO FOR APPLESCRIPT "CREATEXML"
 	
 - add functionality for generating and including url's
 See: http://pkp.sfu.ca/wiki/index.php/Importing_and_Exporting_Data#Articles_and_Issues_XML_Plugin
+
+- further refinements
+	=> create sub-routines
+	=> create loops for adding authors (with option for no author included)
+	=> ask for many more types of content with option to keep it empty
