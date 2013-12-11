@@ -3,7 +3,8 @@ TO DO FOR APPLESCRIPT "CREATEXML"
 
 	=> Research: how to create loop based on decision at end of script instead of count
 	(to be used for authors, and for optional information)
-	
+		->solution: use try block (as used for decision to move to next folder) within repeat
+		
 - add functionality for different sections
 	=> add xml-tags for sections
 	=> prompt for pdf's that are not articles (by section)
@@ -15,6 +16,6 @@ TO DO FOR APPLESCRIPT "CREATEXML"
 See: http://pkp.sfu.ca/wiki/index.php/Importing_and_Exporting_Data#Articles_and_Issues_XML_Plugin
 
 - further refinements
-	=> create sub-routines
 	=> create loops for adding authors (with option for no author included)
 	=> ask for many more types of content with option to keep it empty
+	=> make switching between applescript and skim more convenient

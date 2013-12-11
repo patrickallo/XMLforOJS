@@ -14,12 +14,12 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 	set end_xml to "</issue>"
 	-- start with writing to file
 	global file_path
-	set file_path to issue_folder & issue_number & ".xml" as string
+	set file_path to (issue_folder as alias) & issue_number & ".xml" as string
 	set file_ref to open for access file_path with write permission
 	write begin_xml to file_ref
 	close access file_ref
 -- select all pdfs in folder for issue
-	set current_batch to (document files of entire contents of current_folder whose name ends with "pdf")
+	set current_batch to (document files of entire contents of issue_folder whose name ends with "pdf")
 	repeat with i from 1 to count (every item of current_batch)
 		set current_file to item i of current_batch
 		-- actual collection of content of pdf
@@ -27,7 +27,10 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 			activate
 			open current_file as alias
 			set the bounds of the first window to {900, 0, 1920, 1200} -- window to right half of screen
-			tell application "System Events" to keystroke "0" using command down -- pdf to actual size
+			tell application "System Events"
+				keystroke "0" using command down -- pdf to actual size
+				keystroke "1" using command down -- selecting text tool
+			end tell
 			set current_pdf to document 1
 		end tell
 			tell me to write_title for current_pdf
@@ -41,6 +44,12 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 	-- add comment to folder to keep track of processed folders
 	set folder_props to properties of issue_folder
 	set comment of folder_props to "processed"
+	display dialog "Next issue?" buttons {"Yes", "No"} default button "Yes"
+	try
+		if button returned of the result is "No" then
+			exit repeat
+		end if
+	end try
 end repeat
 end tell
 
@@ -95,7 +104,7 @@ on write_title for this_pdf
 	set this_title to text returned of the result
 	-- writing result to file
 	set title_xml to ("<title>" & this_title & "</title>" & return)
-	write_to_xml of title_xml
+	write_to_xml for title_xml
 end write_title
 
 -- copy and write author
@@ -115,13 +124,14 @@ on write_authors for current_pdf
 	end if
 	set last_name to last word of this_author
 	display dialog "Confirm full name" buttons "OK" default button "OK" default answer (first_name & "-" & middle_name & "-" & last_name)
+	set full_name to (text returned of the result)
 	set AppleScript's text item delimiters to "-"
-	set first_name to first word of (text returned of the result)
-	set middle_name to second word of (text returned of the result)
-	set last_name to third word of (text returned of the result)
+	set first_name to first text item of full_name
+	set middle_name to second text item of full_name
+	set last_name to third text item of full_name
     set AppleScript's text item delimiters to {""}
 	set author_xml to ("<author> <first name> " & first_name & " </first name><middle name> " & middle_name & "</middle name><last name>" & last_name & "</last name></author>" & return)
-	write_to_xml of author_xml
+	write_to_xml for author_xml
 end write_authors
 
 -- retrieve and write pages
@@ -130,19 +140,22 @@ on write_pages for this_pdf
 		tell this_pdf
 			get paragraph -1 of page 1
 			set first_page to result
+			display dialog "Confirm first page" buttons "OK" default button "OK" default answer first_page
+			set first_page to ((text returned of result) as number)
 			get properties
 			get info of result
 			set no_pages to page count of result
-			set page_range to ((first_page &"-"&(first_page + no_pages)) as string)
+			set page_range_xml to ("<pages>"&((first_page &"-"&(first_page + no_pages)) as string)&"</pages>")
 		end tell
 	end tell
-	display dialog "Confirm pages" buttons "OK" default button "OK" default answer page_range
-	set page_range to text returned of the result
-	write_to_xml of page_range
+	-- display dialog "Confirm pages" buttons "OK" default button "OK" default answer page_range
+	-- set page_range to text returned of the result
+	write_to_xml for page_range_xml
 end write_pages
 	
 -- write_to_xml
 on write_to_xml for this_xml
+	global file_path
 	set file_ref to open for access file_path with write permission
 	write this_xml to file_ref starting at eof
 	close access file_ref
