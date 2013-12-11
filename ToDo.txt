@@ -1,13 +1,8 @@
 TO DO FOR APPLESCRIPT "CREATEXML"
 =================================
 
-- add writing to log-file to keep track of progress
-	=> TWO ALTERNATIVES: use properties instead of log-file; set comment to folders, and filter on that basis.
-	=> log is list of folder_names
-	=> my_folder is set by taking the folder with index +1 of index of last folder_name on log
-	=> initial prompt for choosing folder is then set to parent-folder of issue
-	=> script ends with writing to log
 	=> Research: how to create loop based on decision at end of script instead of count
+	(to be used for authors, and for optional information)
 	
 - add functionality for different sections
 	=> add xml-tags for sections
