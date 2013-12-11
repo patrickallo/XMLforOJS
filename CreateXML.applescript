@@ -4,10 +4,10 @@ set main_folder to pick_folder()
 -- create issue xml for each folder
 tell application "Finder"
 repeat with i from 1 to count (every folder of main_folder whose comment is not "processed")
-	set issue_folder to folder i
-	set issue_number to retrieve_issuenum for issue_folder
-	set volume_number to compute_volnum for issue_number
-	set volume_year to compute_year for volume_number
+	set issue_folder to folder i of (every folder of main_folder whose comment is not "processed")
+	tell me to set issue_number to retrieve_issuenum for (issue_folder as alias)
+	tell me to set volume_number to compute_volnum for issue_number
+	tell me to set volume_year to compute_year for volume_number
 	set begin_xml to "<issue><volume>" & (volume_number as string) & "</volume><number>" & (issue_number as string) & "</number><year>" & (volume_year as string) & "</year><open_access />"
 	display dialog "setting issue-id as:" default answer begin_xml
 	set begin_xml to text returned of the result
@@ -30,14 +30,14 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 			tell application "System Events" to keystroke "0" using command down -- pdf to actual size
 			set current_pdf to document 1
 		end tell
-			write_title for current_pdf
-			write_authors for current_pdf
-			write_pages for current_pdf
+			tell me to write_title for current_pdf
+			tell me to write_authors for current_pdf
+			tell me to write_pages for current_pdf
 			tell application "Skim" to close current_pdf
 	end repeat
 	
 	-- finish xml
-	write_to_xml for end_xml
+	tell me to write_to_xml for end_xml
 	-- add comment to folder to keep track of processed folders
 	set folder_props to properties of issue_folder
 	set comment of folder_props to "processed"
@@ -56,12 +56,14 @@ end pick_folder
 
 -- get issue_number from foldername
 on retrieve_issuenum for a_folder
-	tell application "Finder" to set folder_name to the name of a_folder
+	tell application "Finder" 
+		set folder_name to (name of a_folder)
 		if (count (every character in folder_name)) > 5 then
 			set issue_number to ((text 3 thru 5 of folder_name) as number) & "-" & ((text 7 thru -1 of folder_name) as number) as string
 			else
 				set issue_number to (((text 3 thru 5 of folder_name) as number) as string)
 		end if
+	end tell
 	return issue_number
 end retrieve_issuenum
 
