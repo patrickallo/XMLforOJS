@@ -8,10 +8,12 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 	tell me to set issue_number to retrieve_issuenum for (issue_folder as alias)
 	tell me to set volume_number to compute_volnum for issue_number
 	tell me to set volume_year to compute_year for volume_number
-	set begin_xml to "<issue><volume>" & (volume_number as string) & "</volume><number>" & (issue_number as string) & "</number><year>" & (volume_year as string) & "</year><open_access />"
+	set begin_xml to "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+	<!DOCTYPE issues PUBLIC \"-//PKP//OJS Articles and Issues XML//EN\" \"http://pkp.sfu.ca/ojs/dtds/2.4/native.dtd\">
+	<issues><issue published=\"true\" identification=\"num_vol_year\" current=\"false\"><volume>" & (volume_number as string) & "</volume><number>" & (issue_number as string) & "</number><year>" & (volume_year as string) & "</year><open_access />"
 	display dialog "setting issue-id as:" default answer begin_xml
 	set begin_xml to text returned of the result
-	set end_xml to "</section></issue>"
+	set end_xml to "</section></issue></issues>"
 	-- start with writing to file
 	global file_path
 	set file_path to (issue_folder as alias) & issue_number & ".xml" as string
@@ -38,7 +40,8 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 			tell me to handle_section for current_pdf
 			tell me to write_to_xml for "<article>"
 			tell me to write_title for current_pdf
-			tell me to write_authors for current_pdf
+			tell me to write_author for current_pdf
+			tell me to write_add_authors for current_pdf
 			tell me to write_pages for current_pdf
 			tell me to write_to_xml for "</article>"
 			tell application "Skim" to close current_pdf
@@ -128,8 +131,8 @@ on write_title for this_pdf
 	write_to_xml for title_xml
 end write_title
 
--- copy and write author
-on write_authors for current_pdf
+-- copy and write first author
+on write_author for current_pdf
 	set the clipboard to ""
 	set old_clipboard to the clipboard
 	display alert "copy author name" buttons "OK" default button "OK" giving up after 3
@@ -137,23 +140,52 @@ on write_authors for current_pdf
 		delay 1
 	end repeat
 	set this_author to the clipboard
-	set first_name to first word of this_author
-	set name_length to count words in this_author
+	set this_author to parse_author for this_author
+	set author_xml to ("<author primary_contact=\"true\"> <first name>" & first item of this_author & "</first name><middle name>" & second item of this_author & "</middle name><last name>" & third item of this_author & "</last name></author>" & return)
+	write_to_xml for author_xml
+end write_author
+
+-- copy and write remaining authors
+on write_add_authors for current_pdf
+	repeat
+		set the clipboard to ""
+		set old_clipboard to the clipboard
+		display alert "copy author name" buttons {"OK", "No more authors"} default button "No more authors"
+		set decision to button returned of result
+		try
+			if decision is "No more authors" then
+				exit repeat
+			else
+				repeat while old_clipboard = (the clipboard)
+					delay 1
+				end repeat
+				set this_author to the clipboard
+				set this_author to parse_author for this_author
+				set author_xml to ("<author> <first name>" & first item of this_author & "</first name><middle name>" & second item of this_author & "</middle name><last name>" & third item of this_author & "</last name></author>" & return)
+				write_to_xml for author_xml
+			end if
+		end try
+	end repeat
+end write_add_authors
+
+-- parse_author splits up selected text into first middle and last + checks for confirmation and returns as list
+on parse_author for an_author
+	set first_name to first word of an_author
+	set name_length to count words of an_author
 	set middle_name to ""
 	if name_length = 3 then
-		set middle_name to second word of this_author
+		set middle_name to second word of an_author
 	end if
-	set last_name to last word of this_author
-	display dialog "Confirm full name" buttons "OK" default button "OK" default answer (first_name & "-" & middle_name & "-" & last_name)
+	set last_name to last word of an_author
+	display dialog "Confirm full name" buttons "OK" default button "OK" default answer (first_name & "+" & middle_name & "+" & last_name)
 	set full_name to (text returned of the result)
-	set AppleScript's text item delimiters to "-"
-	set first_name to first text item of full_name
-	set middle_name to second text item of full_name
-	set last_name to third text item of full_name
-    set AppleScript's text item delimiters to {""}
-	set author_xml to ("<author> <first name>" & first_name & "</first name><middle name>" & middle_name & "</middle name><last name>" & last_name & "</last name></author>" & return)
-	write_to_xml for author_xml
-end write_authors
+	set AppleScript's text item delimiters to "+"
+	get every text item of full_name
+	set full_name to result
+	set AppleScript's text item delimiters to {""}
+	return full_name
+end parse_author
+
 
 -- retrieve and write pages
 on write_pages for this_pdf
