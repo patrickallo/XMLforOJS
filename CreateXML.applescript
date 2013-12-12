@@ -11,7 +11,7 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 	set begin_xml to "<issue><volume>" & (volume_number as string) & "</volume><number>" & (issue_number as string) & "</number><year>" & (volume_year as string) & "</year><open_access />"
 	display dialog "setting issue-id as:" default answer begin_xml
 	set begin_xml to text returned of the result
-	set end_xml to "</issue>"
+	set end_xml to "</section></issue>"
 	-- start with writing to file
 	global file_path
 	set file_path to (issue_folder as alias) & issue_number & ".xml" as string
@@ -20,6 +20,8 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 	close access file_ref
 -- select all pdfs in folder for issue
 	set current_batch to (document files of entire contents of issue_folder whose name ends with "pdf")
+	global current_section
+	set current_section to "" -- will be used by handle_section subroutine
 	repeat with i from 1 to count (every item of current_batch)
 		set current_file to item i of current_batch
 		-- actual collection of content of pdf
@@ -33,9 +35,12 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 			end tell
 			set current_pdf to document 1
 		end tell
+			tell me to handle_section for current_pdf
+			tell me to write_to_xml for "<article>"
 			tell me to write_title for current_pdf
 			tell me to write_authors for current_pdf
 			tell me to write_pages for current_pdf
+			tell me to write_to_xml for "</article>"
 			tell application "Skim" to close current_pdf
 	end repeat
 	
@@ -91,7 +96,23 @@ end compute_volnum
 on compute_year for volume_number
 	return 1957 + volume_number
 end compute_year
-		
+
+
+-- start/end section and write to file
+on handle_section for this_pdf
+	global current_section
+	copy current_section to previous_section
+	set the section_list to {"", "Editorials", "Articles", "Reviews", "Reports", "Announcements"}
+	set current_section to (choose from list section_list with prompt ("Section for this article:") default items {previous_section}) as string
+	if current_section is previous_section then
+	else
+		set section_xml to ("</section><section><title>" & current_section & "</title>")
+		write_to_xml for section_xml
+	end if
+end handle_section
+	
+
+
 -- retrieve and write title
 on write_title for this_pdf
 	tell application "Skim"
@@ -130,7 +151,7 @@ on write_authors for current_pdf
 	set middle_name to second text item of full_name
 	set last_name to third text item of full_name
     set AppleScript's text item delimiters to {""}
-	set author_xml to ("<author> <first name> " & first_name & " </first name><middle name> " & middle_name & "</middle name><last name>" & last_name & "</last name></author>" & return)
+	set author_xml to ("<author> <first name>" & first_name & "</first name><middle name>" & middle_name & "</middle name><last name>" & last_name & "</last name></author>" & return)
 	write_to_xml for author_xml
 end write_authors
 
