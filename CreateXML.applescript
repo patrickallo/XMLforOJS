@@ -8,12 +8,11 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 	tell me to set issue_number to retrieve_issuenum for (issue_folder as alias)
 	tell me to set volume_number to compute_volnum for issue_number
 	tell me to set volume_year to compute_year for volume_number
-	set begin_xml to "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-	<!DOCTYPE issues PUBLIC \"-//PKP//OJS Articles and Issues XML//EN\" \"http://pkp.sfu.ca/ojs/dtds/2.4/native.dtd\">
-	<issues><issue published=\"true\" identification=\"num_vol_year\" current=\"false\"><volume>" & (volume_number as string) & "</volume><number>" & (issue_number as string) & "</number><year>" & (volume_year as string) & "</year><open_access />"
+	tell me to set pub_date to compute_date(issue_number, volume_number, volume_year)
+	set begin_xml to "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" & return & "<!DOCTYPE issues PUBLIC \"-//PKP//OJS Articles and Issues XML//EN\" \"http://pkp.sfu.ca/ojs/dtds/2.4/native.dtd\">" & return & "<issues>" & return & tab & "<issue published=\"true\" identification=\"num_vol_year\" current=\"false\">" & return & tab & tab & "<volume>" & (volume_number as string) & "</volume>" & return & tab & tab & "<number>" & (issue_number as string) & "</number>" & return & tab & tab & "<year>" & (volume_year as string) & "</year>" & return & tab & tab & "<date_published>" & pub_date & "</date_published>" & return & tab & tab & "<open_access/>" & return
 	display dialog "setting issue-id as:" default answer begin_xml
 	set begin_xml to text returned of the result
-	set end_xml to "</section></issue></issues>"
+	set end_xml to tab & tab & "</section>" & return & tab & "</issue>" & return & "</issues>"
 	-- start with writing to file
 	global file_path
 	set file_path to (issue_folder as alias) & issue_number & ".xml" as string
@@ -33,17 +32,20 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 			set the bounds of the first window to {900, 0, 1920, 1200} -- window to right half of screen
 			tell application "System Events"
 				keystroke "0" using command down -- pdf to actual size
+				delay 1
 				keystroke "1" using command down -- selecting text tool
 			end tell
 			set current_pdf to document 1
 		end tell
 			tell me to handle_section for current_pdf
-			tell me to write_to_xml for "<article>"
+			tell me to write_to_xml for tab & tab & tab &"<article locale=\"en_US\" language=\"en\">" & return
 			tell me to write_title for current_pdf
+			---- tell me to write_abstract for current_pdf --- replaced by next line
+			tell me to write_more(current_pdf, "abstract", "Without abstract", "write")
 			tell me to write_author for current_pdf
 			tell me to write_add_authors for current_pdf
 			tell me to write_pages for current_pdf
-			tell me to write_to_xml for "</article>"
+			tell me to write_to_xml for tab & tab & tab & "</article>" & return
 			tell application "Skim" to close current_pdf
 	end repeat
 	
@@ -100,6 +102,15 @@ on compute_year for volume_number
 	return 1957 + volume_number
 end compute_year
 
+-- compute pub_date
+on compute_date(an_issue, a_vol, a_year)
+	set AppleScript's text item delimiters to "-"
+	get first text item of an_issue
+	set an_issue to result as number
+	set AppleScript's text item delimiters to {""}
+	set this_month to ((an_issue div a_vol)*3) 
+	return a_year &"-"& this_month &"-1" as string
+end compute_date
 
 -- start/end section and write to file
 on handle_section for this_pdf
@@ -109,8 +120,13 @@ on handle_section for this_pdf
 	set current_section to (choose from list section_list with prompt ("Section for this article:") default items {previous_section}) as string
 	if current_section is previous_section then
 	else
-		set section_xml to ("</section><section><title>" & current_section & "</title>")
-		write_to_xml for section_xml
+		if previous_section is "" then -- only open section
+			set section_xml to (tab & tab & "<section>" & return & tab & tab & tab & "<title locale=\"en_US\">" & current_section & "</title>" & return & tab & tab & tab & "<abbrev locale=\"en_US\">ED</abbrev>" & return)
+			write_to_xml for section_xml
+		else -- close section and open section
+			set section_xml to (tab & tab & "</section><section>" & return & tab & tab & tab & "<title locale=\"en_US\">" & current_section & "</title>" & return & tab & tab & tab & "<abbrev locale=\"en_US\">ED</abbrev>" & return)
+			write_to_xml for section_xml
+		end if
 	end if
 end handle_section
 	
@@ -127,7 +143,7 @@ on write_title for this_pdf
 	display dialog "Confirm title" buttons "OK" default button "OK" default answer this_title
 	set this_title to text returned of the result
 	-- writing result to file
-	set title_xml to ("<title>" & this_title & "</title>" & return)
+	set title_xml to (tab & tab & tab & tab & "<title>" & this_title & "</title>" & return)
 	write_to_xml for title_xml
 end write_title
 
@@ -141,7 +157,8 @@ on write_author for current_pdf
 	end repeat
 	set this_author to the clipboard
 	set this_author to parse_author for this_author
-	set author_xml to ("<author primary_contact=\"true\"> <first name>" & first item of this_author & "</first name><middle name>" & second item of this_author & "</middle name><last name>" & third item of this_author & "</last name></author>" & return)
+	set email_xml to write_more(current_pdf, "email", "no@email.here", "return")
+	set author_xml to (tab & tab & tab & tab & "<author primary_contact=\"true\">"& return & tab & tab & tab & tab & tab &"<firstname>" & first item of this_author & "</firstname>" & return & tab & tab & tab & tab & tab & "<middlename>" & second item of this_author & "</middlename>" & return & tab & tab & tab & tab & tab & "<lastname>" & third item of this_author & "</lastname>" & return & tab & email_xml & tab & tab & tab & tab & "</author>" & return)
 	write_to_xml for author_xml
 end write_author
 
@@ -161,7 +178,8 @@ on write_add_authors for current_pdf
 				end repeat
 				set this_author to the clipboard
 				set this_author to parse_author for this_author
-				set author_xml to ("<author> <first name>" & first item of this_author & "</first name><middle name>" & second item of this_author & "</middle name><last name>" & third item of this_author & "</last name></author>" & return)
+				set email_xml to write_more(current_pdf, "email", "no@email.here", "return")
+				set author_xml to (tab & tab & tab & tab & "<author>"& return & tab & tab & tab & tab & tab &"<firstname>" & first item of this_author & "</firstname>" & return & tab & tab & tab & tab & tab & "<middlename>" & second item of this_author & "</middlename>" & return & tab & tab & tab & tab & tab & "<lastname>" & third item of this_author & "</lastname>" & return & tab & email_xml & tab & tab & tab & tab & "</author>" & return)
 				write_to_xml for author_xml
 			end if
 		end try
@@ -198,13 +216,58 @@ on write_pages for this_pdf
 			get properties
 			get info of result
 			set no_pages to page count of result
-			set page_range_xml to ("<pages>"&((first_page &"-"&(first_page + no_pages)) as string)&"</pages>")
+			set page_range_xml to (tab & tab & tab & tab &"<pages>"&((first_page &"-"&(first_page + no_pages)) as string)&"</pages>" & return)
 		end tell
 	end tell
 	-- display dialog "Confirm pages" buttons "OK" default button "OK" default answer page_range
 	-- set page_range to text returned of the result
 	write_to_xml for page_range_xml
 end write_pages
+
+-- retrieve and write optional with default "empty-text" and choice between store and write
+on write_more(this_pdf, content_type, default_value, return_or_write)
+	set the clipboard to ""
+	set old_clipboard to the clipboard
+	set no_thanks to ("Without " & content_type)
+	display alert ("Copy " & content_type & "?") buttons {"OK", no_thanks} default button no_thanks
+	set decision to button returned of result
+	if decision is no_thanks then
+		set this_content to default_value
+	else
+		repeat while old_clipboard = (the clipboard)
+		delay 1
+		end repeat
+		set this_content to the clipboard
+	end if
+	display dialog ("Confirm " & content_type) buttons "OK" default button "OK" default answer this_content
+	set this_content to (text returned of result)
+	set open_tag to "<" & content_type & ">"
+	set close_tag to "</" & content_type & ">"
+	set more_content_xml to (tab & tab & tab & tab &open_tag&this_content&close_tag& return)
+    if return_or_write is "return" then
+		return more_content_xml
+	else
+		write_to_xml for more_content_xml
+	end if
+end write_more
+
+-- retrieve and write abstract -- REFACTOR TO WRITE_OPTIONAL WITH ADD ARGUMENT FOR REUSE FOR EMAIL + ADD CONTROL DISPLAY DIALOG
+on write_abstract for this_pdf
+	set the clipboard to ""
+	set old_clipboard to the clipboard
+	display alert "copy abstract" buttons {"OK", "Without abstract"} default button "Without abstract"
+	set decision to button returned of result
+	if decision is "Without abstract" then
+		set this_abstract to "Without abstract"
+	else
+		repeat while old_clipboard = (the clipboard)
+		delay 1
+		end repeat
+		set this_abstract to the clipboard
+	end if
+	set abstract_xml to (tab & tab & tab & tab &"<abstract>"&this_abstract&"</abstract>" & return)
+	write_to_xml for abstract_xml
+end write_abstract
 	
 -- write_to_xml
 on write_to_xml for this_xml
@@ -213,25 +276,3 @@ on write_to_xml for this_xml
 	write this_xml to file_ref starting at eof
 	close access file_ref
 end write_to_xml
-
-
-
--- snippets from old version
--- display dialog "Copy additional info" buttons "OK" default button "OK"
--- repeat while old_clipboard = (the clipboard)
--- 	delay 1
--- end repeat
--- set add_info to the clipboard
--- display dialog "Confirm affiliation/country" buttons {"Empty", "Affiliation", "Country"} default answer add_info -- to be checked what happens if empty
--- copy the result as list to {add_info, info_type}
--- if info_type = "Affiliation" then
--- 	set info_tag to "<affiliation>"
--- 	set cl_info_tag to "</affiliation>"
--- else
--- 	set info_tag to "<country>"
--- 	set cl_info_tag to "</country>"
--- end if
--- set this_xml to (("<title>" & this_title & "</title>" & return & "<author> <first name> " & first_name & " </first name><middle name> " & middle_name & "</middle name><last name>" & last_name & "</last name></author>" & return & ¬
--- 	info_tag & add_info & cl_info_tag & return & ¬
--- 	"<pages>" & first_page as string) & "-" & first_page + (no_pages - 1) as string) & "</pages>"
--- display dialog "Confirm XML" buttons "OK" default button "OK" default answer this_xml

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>currentDocument</key>
-	<string>OCRbatch.applescript</string>
+	<string>CreateXML.applescript</string>
 	<key>documents</key>
 	<array>
 		<dict>
@@ -22,21 +22,21 @@
 			<key>filename</key>
 			<string>CreateXML.applescript</string>
 			<key>lastUsed</key>
-			<date>2013-12-11T21:59:11Z</date>
-		</dict>
-		<dict>
-			<key>filename</key>
-			<string>OCRbatch.applescript</string>
-			<key>lastUsed</key>
-			<date>2013-12-11T21:59:11Z</date>
+			<date>2013-12-12T21:20:19Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
 		<dict>
 			<key>filename</key>
+			<string>OCRbatch.applescript</string>
+			<key>lastUsed</key>
+			<date>2013-12-12T13:18:32Z</date>
+		</dict>
+		<dict>
+			<key>filename</key>
 			<string>ToDo.txt</string>
 			<key>lastUsed</key>
-			<date>2013-12-11T21:50:24Z</date>
+			<date>2013-12-12T21:20:19Z</date>
 		</dict>
 	</array>
 	<key>fileHierarchyDrawerWidth</key>
@@ -48,14 +48,14 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>58</integer>
+				<integer>17</integer>
 				<key>line</key>
-				<integer>143</integer>
+				<integer>185</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>0</integer>
+			<integer>157</integer>
 		</dict>
 		<key>OCRbatch.applescript</key>
 		<dict>
@@ -76,9 +76,9 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>63</integer>
+				<integer>41</integer>
 				<key>line</key>
-				<integer>20</integer>
+				<integer>4</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
