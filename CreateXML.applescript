@@ -40,7 +40,6 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 			tell me to handle_section for current_pdf
 			tell me to write_to_xml for tab & tab & tab &"<article locale=\"en_US\" language=\"en\">" & return
 			tell me to write_title for current_pdf
-			---- tell me to write_abstract for current_pdf --- replaced by next line
 			tell me to write_more(current_pdf, "abstract", "Without abstract", "write")
 			tell me to write_author for current_pdf
 			tell me to write_add_authors for current_pdf
@@ -51,7 +50,7 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 	
 	-- finish xml
 	tell me to write_to_xml for end_xml
-	-- add comment to folder to keep track of processed folders
+	-- add comment to folder to keep track of processed folders -- DOESN'T WORK!!!
 	set folder_props to properties of issue_folder
 	set comment of folder_props to "processed"
 	display dialog "Next issue?" buttons {"Yes", "No"} default button "Yes"
@@ -226,21 +225,25 @@ end write_pages
 
 -- retrieve and write optional with default "empty-text" and choice between store and write
 on write_more(this_pdf, content_type, default_value, return_or_write)
-	set the clipboard to ""
-	set old_clipboard to the clipboard
-	set no_thanks to ("Without " & content_type)
-	display alert ("Copy " & content_type & "?") buttons {"OK", no_thanks} default button no_thanks
-	set decision to button returned of result
-	if decision is no_thanks then
+	if ((content_type is "email" and volume_year < 1990) or (content_type is "abstract" and volume_number < 120)) then
 		set this_content to default_value
 	else
-		repeat while old_clipboard = (the clipboard)
-		delay 1
-		end repeat
-		set this_content to the clipboard
+		set the clipboard to ""
+		set old_clipboard to the clipboard
+		set no_thanks to ("Without " & content_type)
+		display alert ("Copy " & content_type & "?") buttons {"OK", no_thanks} default button no_thanks
+		set decision to button returned of result
+		if decision is no_thanks then
+			set this_content to default_value
+		else
+			repeat while old_clipboard = (the clipboard)
+				delay 1
+			end repeat
+			set this_content to the clipboard
+		end if
+		display dialog ("Confirm " & content_type) buttons "OK" default button "OK" default answer this_content
+		set this_content to (text returned of result)
 	end if
-	display dialog ("Confirm " & content_type) buttons "OK" default button "OK" default answer this_content
-	set this_content to (text returned of result)
 	set open_tag to "<" & content_type & ">"
 	set close_tag to "</" & content_type & ">"
 	set more_content_xml to (tab & tab & tab & tab &open_tag&this_content&close_tag& return)
@@ -251,23 +254,6 @@ on write_more(this_pdf, content_type, default_value, return_or_write)
 	end if
 end write_more
 
--- retrieve and write abstract -- REFACTOR TO WRITE_OPTIONAL WITH ADD ARGUMENT FOR REUSE FOR EMAIL + ADD CONTROL DISPLAY DIALOG
-on write_abstract for this_pdf
-	set the clipboard to ""
-	set old_clipboard to the clipboard
-	display alert "copy abstract" buttons {"OK", "Without abstract"} default button "Without abstract"
-	set decision to button returned of result
-	if decision is "Without abstract" then
-		set this_abstract to "Without abstract"
-	else
-		repeat while old_clipboard = (the clipboard)
-		delay 1
-		end repeat
-		set this_abstract to the clipboard
-	end if
-	set abstract_xml to (tab & tab & tab & tab &"<abstract>"&this_abstract&"</abstract>" & return)
-	write_to_xml for abstract_xml
-end write_abstract
 	
 -- write_to_xml
 on write_to_xml for this_xml
