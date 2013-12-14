@@ -8,6 +8,3 @@ See: http://pkp.sfu.ca/wiki/index.php/Importing_and_Exporting_Data#Articles_and_
 - set names and titles in either "all caps" or "title case"
 
 - check annotation to folders when done
-
-- further refinements
-	=> make switching between applescript and skim more convenient

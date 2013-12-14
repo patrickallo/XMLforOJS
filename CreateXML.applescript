@@ -117,6 +117,7 @@ on handle_section for this_pdf
 	global current_section
 	copy current_section to previous_section
 	set the section_list to {"", "Editorials", "Articles", "Reviews", "Reports", "Announcements"}
+	tell me to activate
 	set current_section to (choose from list section_list with prompt ("Section for this article:") default items {previous_section}) as string
 	if current_section is previous_section then
 	else
@@ -140,6 +141,7 @@ on write_title for this_pdf
 			set this_title to result as string
 		end tell
 	end tell
+	tell me to activate
 	display dialog "Confirm title" buttons "OK" default button "OK" default answer this_title
 	set this_title to text returned of the result
 	-- writing result to file
@@ -151,6 +153,7 @@ end write_title
 on write_author for current_pdf
 	set the clipboard to ""
 	set old_clipboard to the clipboard
+	tell me to activate
 	display alert "copy author name" buttons "OK" default button "OK" giving up after 3
 	repeat while old_clipboard = (the clipboard)
 		delay 1
@@ -167,6 +170,7 @@ on write_add_authors for current_pdf
 	repeat
 		set the clipboard to ""
 		set old_clipboard to the clipboard
+		tell me to activate
 		display alert "copy author name" buttons {"OK", "No more authors"} default button "No more authors"
 		set decision to button returned of result
 		try
@@ -195,6 +199,7 @@ on parse_author for an_author
 		set middle_name to second word of an_author
 	end if
 	set last_name to last word of an_author
+	tell me to activate
 	display dialog "Confirm full name" buttons "OK" default button "OK" default answer (first_name & "+" & middle_name & "+" & last_name)
 	set full_name to (text returned of the result)
 	set AppleScript's text item delimiters to "+"
@@ -211,6 +216,7 @@ on write_pages for this_pdf
 		tell this_pdf
 			get paragraph -1 of page 1
 			set first_page to result
+			tell me to activate
 			display dialog "Confirm first page" buttons "OK" default button "OK" default answer first_page
 			set first_page to ((text returned of result) as number)
 			get properties
@@ -234,6 +240,7 @@ on write_more(this_pdf, content_type, default_value, return_or_write)
 		set the clipboard to ""
 		set old_clipboard to the clipboard
 		set no_thanks to ("Without " & content_type)
+		tell me to activate
 		display alert ("Copy " & content_type & "?") buttons {"OK", no_thanks} default button no_thanks
 		set decision to button returned of result
 		if decision is no_thanks then
@@ -244,6 +251,7 @@ on write_more(this_pdf, content_type, default_value, return_or_write)
 			end repeat
 			set this_content to the clipboard
 		end if
+		tell me to activate
 		display dialog ("Confirm " & content_type) buttons "OK" default button "OK" default answer this_content
 		set this_content to (text returned of result)
 	end if
