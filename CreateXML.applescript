@@ -1,3 +1,7 @@
+-- import location for pdfs
+global import_location
+set import_location to "http://patridb61.sixtyone.axc.nl/import/"
+
 -- choosing main folder to start
 set main_folder to pick_folder()
 
@@ -27,6 +31,8 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 	set current_section to "" -- will be used by handle_section subroutine
 	repeat with i from 1 to count (every item of current_batch)
 		set current_file to item i of current_batch
+		get the POSIX path of (current_file as alias)
+		set file_location to result
 		-- actual collection of content of pdf
 		tell application "Skim"
 			activate
@@ -46,6 +52,7 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 			tell me to write_author for current_pdf
 			tell me to write_add_authors for current_pdf
 			tell me to write_pages for current_pdf
+			tell me to write_galley for file_location
 			tell me to write_to_xml for tab & tab & tab & "</article>" & return
 			tell application "Skim" to close current_pdf
 	end repeat
@@ -54,6 +61,7 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 	tell me to write_to_xml for end_xml
 	-- add comment to folder to keep track of processed folders -- DOESN'T WORK!!!
 	tell issue_folder to set comment to "processed"
+	tell me to activate 
 	display dialog "Next issue?" buttons {"Yes", "No"} default button "Yes"
 	try
 		if button returned of the result is "No" then
@@ -265,6 +273,17 @@ on write_more(this_pdf, content_type, default_value, return_or_write)
 	end if
 end write_more
 
+-- write galley
+on write_galley for a_path
+	global import_location
+	set AppleScript's text item delimiters to "/"
+	get text items -2 thru -1 of a_path
+	set my_url to result as string
+	set AppleScript's text item delimiters to {""}
+	set my_url to import_location & my_url
+	set galley_xml to (tab & tab & tab & tab & "<galley>"& return & tab & tab & tab & tab & tab & "<label>PDF</label>"&return& tab & tab & tab & tab & tab & "<file><href src=\"" & my_url & "\"/></file>" & return & tab & tab & tab & tab & "</galley>"& return)
+	write_to_xml for galley_xml
+end write_galley
 	
 -- write_to_xml
 on write_to_xml for this_xml
