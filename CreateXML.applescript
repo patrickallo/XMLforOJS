@@ -6,7 +6,9 @@ tell application "Finder"
 repeat with i from 1 to count (every folder of main_folder whose comment is not "processed")
 	set issue_folder to folder i of (every folder of main_folder whose comment is not "processed")
 	tell me to set issue_number to retrieve_issuenum for (issue_folder as alias)
+	global volume_number
 	tell me to set volume_number to compute_volnum for issue_number
+	global volume_year
 	tell me to set volume_year to compute_year for volume_number
 	tell me to set pub_date to compute_date(issue_number, volume_number, volume_year)
 	set begin_xml to "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" & return & "<!DOCTYPE issues PUBLIC \"-//PKP//OJS Articles and Issues XML//EN\" \"http://pkp.sfu.ca/ojs/dtds/2.4/native.dtd\">" & return & "<issues>" & return & tab & "<issue published=\"true\" identification=\"num_vol_year\" current=\"false\">" & return & tab & tab & "<volume>" & (volume_number as string) & "</volume>" & return & tab & tab & "<number>" & (issue_number as string) & "</number>" & return & tab & tab & "<year>" & (volume_year as string) & "</year>" & return & tab & tab & "<date_published>" & pub_date & "</date_published>" & return & tab & tab & "<open_access/>" & return
@@ -51,8 +53,7 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 	-- finish xml
 	tell me to write_to_xml for end_xml
 	-- add comment to folder to keep track of processed folders -- DOESN'T WORK!!!
-	set folder_props to properties of issue_folder
-	set comment of folder_props to "processed"
+	tell issue_folder to set comment to "processed"
 	display dialog "Next issue?" buttons {"Yes", "No"} default button "Yes"
 	try
 		if button returned of the result is "No" then
@@ -123,7 +124,7 @@ on handle_section for this_pdf
 			set section_xml to (tab & tab & "<section>" & return & tab & tab & tab & "<title locale=\"en_US\">" & current_section & "</title>" & return & tab & tab & tab & "<abbrev locale=\"en_US\">ED</abbrev>" & return)
 			write_to_xml for section_xml
 		else -- close section and open section
-			set section_xml to (tab & tab & "</section><section>" & return & tab & tab & tab & "<title locale=\"en_US\">" & current_section & "</title>" & return & tab & tab & tab & "<abbrev locale=\"en_US\">ED</abbrev>" & return)
+			set section_xml to (tab & tab & "</section>" & return & tab & tab & "<section>" & return & tab & tab & tab & "<title locale=\"en_US\">" & current_section & "</title>" & return & tab & tab & tab & "<abbrev locale=\"en_US\">ED</abbrev>" & return)
 			write_to_xml for section_xml
 		end if
 	end if
@@ -225,6 +226,8 @@ end write_pages
 
 -- retrieve and write optional with default "empty-text" and choice between store and write
 on write_more(this_pdf, content_type, default_value, return_or_write)
+	global volume_year
+	global volume_number
 	if ((content_type is "email" and volume_year < 1990) or (content_type is "abstract" and volume_number < 120)) then
 		set this_content to default_value
 	else
