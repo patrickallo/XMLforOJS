@@ -1,9 +1,11 @@
 -- import location for pdfs
-global import_location
-set import_location to "http://patridb61.sixtyone.axc.nl/import/"
+property import_location : "http://www.mysite.com/import/"
+property main_folder : (path to home folder as alias)
 
 -- choosing main folder to start
 set main_folder to pick_folder()
+set import_location to confirm_remote()
+-- confirm import location
 
 -- create issue xml for each folder
 tell application "Finder"
@@ -75,11 +77,16 @@ end tell
 -- sub-routines -------------------------------
 -----------------------------------------------
 
--- choosing main folder
+-- choosing local and remote folders
 on pick_folder()
-	choose folder with prompt "Choose a folder" default location (path to desktop as alias)
+	choose folder with prompt "Choose local folder with pdfs" default location main_folder
 	return result
 end pick_folder
+
+on confirm_remote()
+	display dialog "Confirm remote folder for importing pdfs" buttons "OK" default button "OK" default answer import_location
+	return the text returned of the result 
+end confirm_remote
 
 -- get issue_number from foldername
 on retrieve_issuenum for a_folder
