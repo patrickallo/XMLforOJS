@@ -1,6 +1,8 @@
 -- import location for pdfs
 property import_location : "http://www.mysite.com/import/"
 property main_folder : (path to home folder as alias)
+-- property used by set_case
+property alphalist : "abcdefghijklmnopqrstuvwxyz"'s items & reverse of "ABCDEFGHIJKLMNOPQRSTUVWXYZ"'s items
 
 -- choosing main folder to start
 set main_folder to pick_folder()
@@ -154,6 +156,12 @@ on write_title for this_pdf
 		tell this_pdf
 			get paragraph 1 of page 1
 			set this_title to result as string
+			set text item delimiters to return
+			tell this_title to get its first text item
+			set this_title to result
+			set text item delimiters to {""}
+			tell me to set_case of this_title to "sentence"
+			set this_title to result
 		end tell
 	end tell
 	tell me to activate
@@ -205,8 +213,10 @@ on write_add_authors for current_pdf
 	end repeat
 end write_add_authors
 
--- parse_author splits up selected text into first middle and last + checks for confirmation and returns as list
+-- parse_author sets to title case and splits up selected text into first middle and last + checks for confirmation and returns as list
 on parse_author for an_author
+	tell me to set_case of an_author to "title"
+	set an_author to result
 	set first_name to first word of an_author
 	set name_length to count words of an_author
 	set middle_name to ""
@@ -223,6 +233,44 @@ on parse_author for an_author
 	set AppleScript's text item delimiters to {""}
 	return full_name
 end parse_author
+
+
+-- set_case sets strings to title case or sentence case
+on set_case of this_text to t_s
+	if (count this_text) is 0 then return this_text
+	considering case
+		set n to -1
+		set old_delimiters to text item delimiters
+		-- sets this_text to lower case
+		repeat with n from n to n * 26 by n
+			set text item delimiters to my alphalist's item n
+			set this_text to this_text's text items
+			set text item delimiters to my alphalist's item -n
+			tell this_text to set this_text to beginning & ({""} & rest)
+		end repeat
+		if t_s is "title" then
+			set s to space
+		else
+			set s to "."
+		end if
+		set this_text to (this_text's item 1 & s & this_text)'s text 2 thru -1
+		-- loops through spaces/".", tab, return, and "
+		repeat with i in {s, tab, return, ASCII character 10, ASCII character 45}
+			set text item delimiters to i
+			if (count this_text's text items) > 1 then repeat with n from 1 to 26
+				set text item delimiters to i & my alphalist's item n
+				if (count this_text's text items) > 1 then
+					set this_text to this_text's text items
+					set text item delimiters to i & my alphalist's item -n
+					tell this_text to set this_text to beginning & ({""} & rest)
+				end if
+			end repeat
+		end repeat
+		set this_text to this_text's text ((count s) + 1) thru -1
+		set text item delimiters to old_delimiters
+	end considering
+	return this_text
+end set_case
 
 
 -- retrieve and write pages

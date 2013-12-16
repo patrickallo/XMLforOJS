@@ -1,5 +1,5 @@
 TO DO FOR APPLESCRIPT "CREATEXML"
 =================================
 
-- set names and titles in either "all caps" or "title case"
+- fine-tune set_case to keep track of "-" for names, but not for titles
 - see if better error-handling is possible
