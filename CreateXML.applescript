@@ -134,15 +134,19 @@ on handle_section for this_pdf
 	global current_section
 	copy current_section to previous_section
 	set the section_list to {"", "Editorials", "Articles", "Reviews", "Reports", "Announcements"}
+	set the section_abr to {"", "ED", "ART", "REV", "REP", "ANN"}
 	tell me to activate
 	set current_section to (choose from list section_list with prompt ("Section for this article:") default items {previous_section}) as string
+	repeat with i from 1 to (count of section_list)
+		if current_section is item i of section_list then set current_section_ab to item i of section_abr
+	end repeat
 	if current_section is previous_section then
 	else
 		if previous_section is "" then -- only open section
-			set section_xml to (tab & tab & "<section>" & return & tab & tab & tab & "<title locale=\"en_US\">" & current_section & "</title>" & return & tab & tab & tab & "<abbrev locale=\"en_US\">ED</abbrev>" & return)
+			set section_xml to (tab & tab & "<section>" & return & tab & tab & tab & "<title locale=\"en_US\">" & current_section & "</title>" & return & tab & tab & tab & "<abbrev locale=\"en_US\">" & current_section_ab & "</abbrev>" & return)
 			write_to_xml for section_xml
 		else -- close section and open section
-			set section_xml to (tab & tab & "</section>" & return & tab & tab & "<section>" & return & tab & tab & tab & "<title locale=\"en_US\">" & current_section & "</title>" & return & tab & tab & tab & "<abbrev locale=\"en_US\">ED</abbrev>" & return)
+			set section_xml to (tab & tab & "</section>" & return & tab & tab & "<section>" & return & tab & tab & tab & "<title locale=\"en_US\">" & current_section & "</title>" & return & tab & tab & tab & "<abbrev locale=\"en_US\">" & current_section_ab & "</abbrev>" & return)
 			write_to_xml for section_xml
 		end if
 	end if
@@ -156,11 +160,13 @@ on write_title for this_pdf
 		tell this_pdf
 			get paragraph 1 of page 1
 			set this_title to result as string
-			set text item delimiters to return
-			tell this_title to get its first text item
+			set Applescript's text item delimiters to return
+			tell this_title to get its text items
 			set this_title to result
-			set text item delimiters to {""}
-			tell me to set_case of this_title to "sentence"
+			set Applescript's text item delimiters to {" "}
+			set this_title to this_title as string
+			set Applescript's text item delimiters to {""}
+			tell me to set_case of this_title to "title"
 			set this_title to result
 		end tell
 	end tell
@@ -215,7 +221,7 @@ end write_add_authors
 
 -- parse_author sets to title case and splits up selected text into first middle and last + checks for confirmation and returns as list
 on parse_author for an_author
-	tell me to set_case of an_author to "title"
+	tell me to set_case of an_author to "name"
 	set an_author to result
 	set first_name to first word of an_author
 	set name_length to count words of an_author
@@ -235,39 +241,41 @@ on parse_author for an_author
 end parse_author
 
 
--- set_case sets strings to title case or sentence case
-on set_case of this_text to t_s
+-- set_case sets strings to name (caps for all words and after "-") or title (only caps at start or after ".")
+on set_case of this_text to NameOrTitle
 	if (count this_text) is 0 then return this_text
 	considering case
 		set n to -1
-		set old_delimiters to text item delimiters
+		set old_delimiters to AppleScript's text item delimiters
 		-- sets this_text to lower case
 		repeat with n from n to n * 26 by n
-			set text item delimiters to my alphalist's item n
+			set AppleScript's text item delimiters to my alphalist's item n
 			set this_text to this_text's text items
-			set text item delimiters to my alphalist's item -n
+			set AppleScript's text item delimiters to my alphalist's item -n
 			tell this_text to set this_text to beginning & ({""} & rest)
 		end repeat
-		if t_s is "title" then
+		if NameOrTitle is "name" then
 			set s to space
+			set special_chars to {s} & {return, ASCII character 45}
 		else
 			set s to "."
+			set special_chars to {s} & {return, ASCII character 10}
 		end if
 		set this_text to (this_text's item 1 & s & this_text)'s text 2 thru -1
 		-- loops through spaces/".", tab, return, and "
-		repeat with i in {s, tab, return, ASCII character 10, ASCII character 45}
-			set text item delimiters to i
+		repeat with i in special_chars
+			set AppleScript's text item delimiters to i
 			if (count this_text's text items) > 1 then repeat with n from 1 to 26
-				set text item delimiters to i & my alphalist's item n
+				set AppleScript's text item delimiters to i & my alphalist's item n
 				if (count this_text's text items) > 1 then
 					set this_text to this_text's text items
-					set text item delimiters to i & my alphalist's item -n
+					set AppleScript's text item delimiters to i & my alphalist's item -n
 					tell this_text to set this_text to beginning & ({""} & rest)
 				end if
 			end repeat
 		end repeat
 		set this_text to this_text's text ((count s) + 1) thru -1
-		set text item delimiters to old_delimiters
+		set AppleScript's text item delimiters to old_delimiters
 	end considering
 	return this_text
 end set_case
@@ -285,7 +293,7 @@ on write_pages for this_pdf
 			get properties
 			get info of result
 			set no_pages to page count of result
-			set page_range_xml to (tab & tab & tab & tab &"<pages>"&((first_page &"-"&(first_page + no_pages)) as string)&"</pages>" & return)
+			set page_range_xml to (tab & tab & tab & tab &"<pages>"&((first_page &"-"&(first_page + (no_pages - 1))) as string)&"</pages>" & return)
 		end tell
 	end tell
 	-- display dialog "Confirm pages" buttons "OK" default button "OK" default answer page_range
