@@ -125,7 +125,12 @@ on compute_date(an_issue, a_vol, a_year)
 	get first text item of an_issue
 	set an_issue to result as number
 	set AppleScript's text item delimiters to {""}
-	set this_month to ((an_issue div a_vol)*3) 
+	set this_month to (an_issue mod 4)
+	if this_month = 0 then
+		set this_month to 12
+	else
+		set this_month to (3 * this_month)
+	end if
 	return a_year &"-"& this_month &"-1" as string
 end compute_date
 
