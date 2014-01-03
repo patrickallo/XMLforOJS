@@ -34,7 +34,7 @@
 			<key>filename</key>
 			<string>ToDo.txt</string>
 			<key>lastUsed</key>
-			<date>2013-12-20T11:00:32Z</date>
+			<date>2013-12-20T11:08:50Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -80,6 +80,6 @@
 	<key>showFileHierarchyDrawer</key>
 	<false/>
 	<key>windowFrame</key>
-	<string>{{4, 0}, {1358, 1178}}</string>
+	<string>{{4, 0}, {1358, 878}}</string>
 </dict>
 </plist>

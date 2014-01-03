@@ -19,10 +19,10 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 	global volume_year
 	tell me to set volume_year to compute_year for volume_number
 	tell me to set pub_date to compute_date(issue_number, volume_number, volume_year)
-	set begin_xml to "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" & return & "<!DOCTYPE issues PUBLIC \"-//PKP//OJS Articles and Issues XML//EN\" \"http://pkp.sfu.ca/ojs/dtds/2.4/native.dtd\">" & return & "<issues>" & return & tab & "<issue published=\"true\" identification=\"num_vol_year\" current=\"false\">" & return & tab & tab & "<volume>" & (volume_number as string) & "</volume>" & return & tab & tab & "<number>" & (issue_number as string) & "</number>" & return & tab & tab & "<year>" & (volume_year as string) & "</year>" & return & tab & tab & "<date_published>" & pub_date & "</date_published>" & return & tab & tab & "<open_access/>" & return
+	set begin_xml to "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" & return & "<!DOCTYPE issues PUBLIC \"-//PKP//OJS Articles and Issues XML//EN\" \"http://pkp.sfu.ca/ojs/dtds/2.4/native.dtd\">" & return & return & tab & "<issue published=\"true\" identification=\"num_vol_year\" current=\"false\">" & return & tab & tab & "<volume>" & (volume_number as string) & "</volume>" & return & tab & tab & "<number>" & (issue_number as string) & "</number>" & return & tab & tab & "<year>" & (volume_year as string) & "</year>" & return & tab & tab & "<date_published>" & pub_date & "</date_published>" & return & tab & tab & "<open_access/>" & return
 	display dialog "setting issue-id as:" default answer begin_xml
 	set begin_xml to text returned of the result
-	set end_xml to tab & tab & "</section>" & return & tab & "</issue>" & return & "</issues>"
+	set end_xml to tab & tab & "</section>" & return & tab & "</issue>" & return
 	-- start with writing to file
 	global file_path
 	set file_path to (issue_folder as alias) & issue_number & ".xml" as string
