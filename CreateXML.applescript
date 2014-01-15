@@ -2,55 +2,59 @@
 property import_location : "http://www.mysite.com/import/"
 property main_folder : (path to home folder as alias)
 -- property used by set_case
-property alphalist : "abcdefghijklmnopqrstuvwxyz"'s items & reverse of "ABCDEFGHIJKLMNOPQRSTUVWXYZ"'s items
+property alphalist : "aàbcdeéèêfghijklmnopqrstuvwxyz"'s items & reverse of "AÀBCDEÉÈÊFGHIJKLMNOPQRSTUVWXYZ"'s items
+--property used to find pagenr
+property page_location : "first"
 
 -- choosing main folder to start
 set main_folder to pick_folder()
-set import_location to confirm_remote()
 -- confirm import location
+set import_location to confirm_remote()
+-- confirm page-location
+set page_location to confirm_page()
 
 -- create issue xml for each folder
 tell application "Finder"
-repeat with i from 1 to count (every folder of main_folder whose comment is not "processed")
-	set issue_folder to folder i of (every folder of main_folder whose comment is not "processed")
-	tell me to set issue_number to retrieve_issuenum for (issue_folder as alias)
-	global volume_number
-	tell me to set volume_number to compute_volnum for issue_number
-	global volume_year
-	tell me to set volume_year to compute_year for volume_number
-	tell me to set pub_date to compute_date(issue_number, volume_number, volume_year)
-	set begin_xml to "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" & return & "<!DOCTYPE issues PUBLIC \"-//PKP//OJS Articles and Issues XML//EN\" \"http://pkp.sfu.ca/ojs/dtds/2.4/native.dtd\">" & return & return & tab & "<issue published=\"true\" identification=\"num_vol_year\" current=\"false\">" & return & tab & tab & "<volume>" & (volume_number as string) & "</volume>" & return & tab & tab & "<number>" & (issue_number as string) & "</number>" & return & tab & tab & "<year>" & (volume_year as string) & "</year>" & return & tab & tab & "<date_published>" & pub_date & "</date_published>" & return & tab & tab & "<open_access/>" & return
-	display dialog "setting issue-id as:" default answer begin_xml
-	set begin_xml to text returned of the result
-	set end_xml to tab & tab & "</section>" & return & tab & "</issue>" & return
-	-- start with writing to file
-	global file_path
-	set file_path to (issue_folder as alias) & issue_number & ".xml" as string
-	set file_ref to open for access file_path with write permission
-	write begin_xml to file_ref
-	close access file_ref
--- select all pdfs in folder for issue
-	set current_batch to (document files of entire contents of issue_folder whose name ends with "pdf")
-	global current_section
-	set current_section to "" -- will be used by handle_section subroutine
-	repeat with i from 1 to count (every item of current_batch)
-		set current_file to item i of current_batch
-		get the POSIX path of (current_file as alias)
-		set file_location to result
-		-- actual collection of content of pdf
-		tell application "Skim"
-			activate
-			open current_file as alias
-			set the bounds of the first window to {900, 0, 1920, 1200} -- window to right half of screen
-			tell application "System Events"
-				keystroke "0" using command down -- pdf to actual size
-				delay 1
-				keystroke "1" using command down -- selecting text tool
+	repeat with i from 1 to count (every folder of main_folder whose comment is not "processed")
+		set issue_folder to folder i of (every folder of main_folder whose comment is not "processed")
+		tell me to set issue_number to retrieve_issuenum for (issue_folder as alias)
+		global volume_number
+		tell me to set volume_number to compute_volnum for issue_number
+		global volume_year
+		tell me to set volume_year to compute_year for volume_number
+		tell me to set pub_date to compute_date(issue_number, volume_number, volume_year)
+		set begin_xml to "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" & return & "<!DOCTYPE issues PUBLIC \"-//PKP//OJS Articles and Issues XML//EN\" \"http://pkp.sfu.ca/ojs/dtds/2.4/native.dtd\">" & return & return & tab & "<issue published=\"true\" identification=\"num_vol_year\" current=\"false\">" & return & tab & tab & "<volume>" & (volume_number as string) & "</volume>" & return & tab & tab & "<number>" & (issue_number as string) & "</number>" & return & tab & tab & "<year>" & (volume_year as string) & "</year>" & return & tab & tab & "<date_published>" & pub_date & "</date_published>" & return & tab & tab & "<open_access/>" & return
+		display dialog "setting issue-id as:" default answer begin_xml
+		set begin_xml to text returned of the result
+		set end_xml to tab & tab & "</section>" & return & tab & "</issue>" & return
+		-- start with writing to file
+		global file_path
+		set file_path to (issue_folder as alias) & issue_number & ".xml" as string
+		set file_ref to open for access file_path with write permission
+		write begin_xml to file_ref
+		close access file_ref
+		-- select all pdfs in folder for issue
+		set current_batch to (document files of entire contents of issue_folder whose name ends with "pdf")
+		global current_section
+		set current_section to "" -- will be used by handle_section subroutine
+		repeat with i from 1 to count (every item of current_batch)
+			set current_file to item i of current_batch
+			get the POSIX path of (current_file as alias)
+			set file_location to result
+			-- actual collection of content of pdf
+			tell application "Skim"
+				activate
+				open current_file as alias
+				set the bounds of the first window to {900, 0, 1920, 1200} -- window to right half of screen
+				tell application "System Events"
+					keystroke "0" using command down -- pdf to actual size
+					delay 1
+					keystroke "1" using command down -- selecting text tool
+				end tell
+				set current_pdf to document 1
 			end tell
-			set current_pdf to document 1
-		end tell
 			tell me to handle_section for current_pdf
-			tell me to write_to_xml for tab & tab & tab &"<article locale=\"en_US\" language=\"en\">" & return
+			tell me to write_to_xml for tab & tab & tab & "<article locale=\"en_US\" language=\"en\">" & return
 			tell me to write_title for current_pdf
 			tell me to write_more(current_pdf, "abstract", "Without abstract", "write")
 			tell me to write_author for current_pdf
@@ -59,20 +63,20 @@ repeat with i from 1 to count (every folder of main_folder whose comment is not 
 			tell me to write_galley for file_location
 			tell me to write_to_xml for tab & tab & tab & "</article>" & return
 			tell application "Skim" to close current_pdf
+		end repeat
+		
+		-- finish xml
+		tell me to write_to_xml for end_xml
+		-- add comment to folder to keep track of processed folders -- DOESN'T WORK!!!
+		tell issue_folder to set comment to "processed"
+		tell me to activate
+		display dialog "Next issue?" buttons {"Yes", "No"} default button "Yes"
+		try
+			if button returned of the result is "No" then
+				exit repeat
+			end if
+		end try
 	end repeat
-	
-	-- finish xml
-	tell me to write_to_xml for end_xml
-	-- add comment to folder to keep track of processed folders -- DOESN'T WORK!!!
-	tell issue_folder to set comment to "processed"
-	tell me to activate 
-	display dialog "Next issue?" buttons {"Yes", "No"} default button "Yes"
-	try
-		if button returned of the result is "No" then
-			exit repeat
-		end if
-	end try
-end repeat
 end tell
 
 -----------------------------------------------
@@ -87,17 +91,23 @@ end pick_folder
 
 on confirm_remote()
 	display dialog "Confirm remote folder for importing pdfs" buttons "OK" default button "OK" default answer import_location
-	return the text returned of the result 
+	return the text returned of the result
 end confirm_remote
+
+on confirm_page()
+	set the location_list to {"First", "Second"}
+	set confirm_page to (choose from list location_list with prompt ("Confirm location of pagenumber:") default items {page_location}) as string
+	return confirm_page
+end confirm_page
 
 -- get issue_number from foldername
 on retrieve_issuenum for a_folder
-	tell application "Finder" 
+	tell application "Finder"
 		set folder_name to (name of a_folder)
 		if (count (every character in folder_name)) > 5 then
 			set issue_number to ((text 3 thru 5 of folder_name) as number) & "-" & ((text 7 thru -1 of folder_name) as number) as string
-			else
-				set issue_number to (((text 3 thru 5 of folder_name) as number) as string)
+		else
+			set issue_number to (((text 3 thru 5 of folder_name) as number) as string)
 		end if
 	end tell
 	return issue_number
@@ -106,11 +116,11 @@ end retrieve_issuenum
 -- compute volume_number from issuenumber
 on compute_volnum for issue_number
 	copy ((text ((offset of "-" in issue_number) + 1) thru -1 of issue_number) as number) to issue_num
-		if (issue_num mod 4) = 0 then
-			set volume_number to (issue_num / 4) as integer
-		else
-			set volume_number to ((issue_num div 4) + 1) as integer
-		end if
+	if (issue_num mod 4) = 0 then
+		set volume_number to (issue_num / 4) as integer
+	else
+		set volume_number to ((issue_num div 4) + 1) as integer
+	end if
 	return volume_number
 end compute_volnum
 
@@ -131,7 +141,7 @@ on compute_date(an_issue, a_vol, a_year)
 	else
 		set this_month to (3 * this_month)
 	end if
-	return a_year &"-"& this_month &"-1" as string
+	return a_year & "-" & this_month & "-1" as string
 end compute_date
 
 -- start/end section and write to file
@@ -156,7 +166,7 @@ on handle_section for this_pdf
 		end if
 	end if
 end handle_section
-	
+
 
 
 -- retrieve and write title
@@ -165,12 +175,12 @@ on write_title for this_pdf
 		tell this_pdf
 			get paragraph 1 of page 1
 			set this_title to result as string
-			set Applescript's text item delimiters to return
+			set AppleScript's text item delimiters to return
 			tell this_title to get its text items
 			set this_title to result
-			set Applescript's text item delimiters to {" "}
+			set AppleScript's text item delimiters to {" "}
 			set this_title to this_title as string
-			set Applescript's text item delimiters to {""}
+			set AppleScript's text item delimiters to {""}
 			tell me to set_case of this_title to "title"
 			set this_title to result
 		end tell
@@ -195,7 +205,7 @@ on write_author for current_pdf
 	set this_author to the clipboard
 	set this_author to parse_author for this_author
 	set email_xml to write_more(current_pdf, "email", "no@email.here", "return")
-	set author_xml to (tab & tab & tab & tab & "<author primary_contact=\"true\">"& return & tab & tab & tab & tab & tab &"<firstname>" & first item of this_author & "</firstname>" & return & tab & tab & tab & tab & tab & "<middlename>" & second item of this_author & "</middlename>" & return & tab & tab & tab & tab & tab & "<lastname>" & third item of this_author & "</lastname>" & return & tab & email_xml & tab & tab & tab & tab & "</author>" & return)
+	set author_xml to (tab & tab & tab & tab & "<author primary_contact=\"true\">" & return & tab & tab & tab & tab & tab & "<firstname>" & first item of this_author & "</firstname>" & return & tab & tab & tab & tab & tab & "<middlename>" & second item of this_author & "</middlename>" & return & tab & tab & tab & tab & tab & "<lastname>" & third item of this_author & "</lastname>" & return & tab & email_xml & tab & tab & tab & tab & "</author>" & return)
 	write_to_xml for author_xml
 end write_author
 
@@ -217,7 +227,7 @@ on write_add_authors for current_pdf
 				set this_author to the clipboard
 				set this_author to parse_author for this_author
 				set email_xml to write_more(current_pdf, "email", "no@email.here", "return")
-				set author_xml to (tab & tab & tab & tab & "<author>"& return & tab & tab & tab & tab & tab &"<firstname>" & first item of this_author & "</firstname>" & return & tab & tab & tab & tab & tab & "<middlename>" & second item of this_author & "</middlename>" & return & tab & tab & tab & tab & tab & "<lastname>" & third item of this_author & "</lastname>" & return & tab & email_xml & tab & tab & tab & tab & "</author>" & return)
+				set author_xml to (tab & tab & tab & tab & "<author>" & return & tab & tab & tab & tab & tab & "<firstname>" & first item of this_author & "</firstname>" & return & tab & tab & tab & tab & tab & "<middlename>" & second item of this_author & "</middlename>" & return & tab & tab & tab & tab & tab & "<lastname>" & third item of this_author & "</lastname>" & return & tab & email_xml & tab & tab & tab & tab & "</author>" & return)
 				write_to_xml for author_xml
 			end if
 		end try
@@ -290,21 +300,30 @@ end set_case
 on write_pages for this_pdf
 	tell application "Skim"
 		tell this_pdf
-			get paragraph -1 of page 1
-			set first_page to result
-			tell me to activate
-			display dialog "Confirm first page" buttons "OK" default button "OK" default answer first_page
-			set first_page to ((text returned of result) as number)
 			get properties
 			get info of result
 			set no_pages to page count of result
-			set page_range_xml to (tab & tab & tab & tab &"<pages>"&((first_page &"-"&(first_page + (no_pages - 1))) as string)&"</pages>" & return)
+			if (page_location is "first")
+				get paragraph -1 of page 1
+				set first_page to result
+			else if ((page_location is "second") and (no_pages >1))
+				get word 1 of paragraph 1 of page 2
+				set first_page to (result - 1)
+			else
+				set first_page to "?"
+			end if
+			tell me to activate
+			display dialog "Confirm first page" buttons "OK" default button "OK" default answer first_page
+			set first_page to ((text returned of result) as number)
+			
+			set page_range_xml to (tab & tab & tab & tab & "<pages>" & ((first_page & "-" & (first_page + (no_pages - 1))) as string) & "</pages>" & return)
 		end tell
 	end tell
 	-- display dialog "Confirm pages" buttons "OK" default button "OK" default answer page_range
 	-- set page_range to text returned of the result
 	write_to_xml for page_range_xml
 end write_pages
+
 
 -- retrieve and write optional with default "empty-text" and choice between store and write
 on write_more(this_pdf, content_type, default_value, return_or_write)
@@ -333,8 +352,8 @@ on write_more(this_pdf, content_type, default_value, return_or_write)
 	end if
 	set open_tag to "<" & content_type & ">"
 	set close_tag to "</" & content_type & ">"
-	set more_content_xml to (tab & tab & tab & tab &open_tag&this_content&close_tag& return)
-    if return_or_write is "return" then
+	set more_content_xml to (tab & tab & tab & tab & open_tag & this_content & close_tag & return)
+	if return_or_write is "return" then
 		return more_content_xml
 	else
 		write_to_xml for more_content_xml
@@ -349,10 +368,10 @@ on write_galley for a_path
 	set my_url to result as string
 	set AppleScript's text item delimiters to {""}
 	set my_url to import_location & my_url
-	set galley_xml to (tab & tab & tab & tab & "<galley>"& return & tab & tab & tab & tab & tab & "<label>PDF</label>"&return& tab & tab & tab & tab & tab & "<file><href src=\"" & my_url & "\"/></file>" & return & tab & tab & tab & tab & "</galley>"& return)
+	set galley_xml to (tab & tab & tab & tab & "<galley>" & return & tab & tab & tab & tab & tab & "<label>PDF</label>" & return & tab & tab & tab & tab & tab & "<file><href src=\"" & my_url & "\"/></file>" & return & tab & tab & tab & tab & "</galley>" & return)
 	write_to_xml for galley_xml
 end write_galley
-	
+
 -- write_to_xml
 on write_to_xml for this_xml
 	global file_path
