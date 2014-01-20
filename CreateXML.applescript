@@ -2,8 +2,8 @@
 property import_location : "http://www.mysite.com/import/"
 property main_folder : (path to home folder as alias)
 -- property used by set_case
-property alphalist : "aàbcdeéèêfghijklmnopqrstuvwxyz"'s items & reverse of "AÀBCDEÉÈÊFGHIJKLMNOPQRSTUVWXYZ"'s items
-property alphalength: 30
+property alphalist : "aàbcdeéèêfghijklmnoôpqrstuûvwxyz"'s items & reverse of "AÀBCDEÉÈÊFGHIJKLMNOÔPQRSTUÛVWXYZ"'s items
+property alphalength: 32
 --property used to find pagenr
 property page_location : "first"
 
@@ -287,7 +287,7 @@ on set_case of this_text to NameOrTitle
 		-- loops through spaces/".", tab, return, and "
 		repeat with i in special_chars
 			set AppleScript's text item delimiters to i
-			if (count this_text's text items) > 1 then repeat with n from 1 to 26
+			if (count this_text's text items) > 1 then repeat with n from 1 to alphalength
 				set AppleScript's text item delimiters to i & my alphalist's item n
 				if (count this_text's text items) > 1 then
 					set this_text to this_text's text items
