@@ -3,6 +3,7 @@ property import_location : "http://www.mysite.com/import/"
 property main_folder : (path to home folder as alias)
 -- property used by set_case
 property alphalist : "aàbcdeéèêfghijklmnopqrstuvwxyz"'s items & reverse of "AÀBCDEÉÈÊFGHIJKLMNOPQRSTUVWXYZ"'s items
+property alphalength: 30
 --property used to find pagenr
 property page_location : "first"
 
@@ -263,7 +264,7 @@ on set_case of this_text to NameOrTitle
 		set n to -1
 		set old_delimiters to AppleScript's text item delimiters
 		-- sets this_text to lower case
-		repeat with n from n to n * 26 by n
+		repeat with n from n to n * alphalength by n
 			set AppleScript's text item delimiters to my alphalist's item n
 			set this_text to this_text's text items
 			set AppleScript's text item delimiters to my alphalist's item -n
@@ -306,9 +307,17 @@ on write_pages for this_pdf
 			if (page_location is "first")
 				get paragraph -1 of page 1
 				set first_page to result
-			else if ((page_location is "second") and (no_pages >1))
+			else if ((page_location is "second") and (no_pages > 1))
 				get word 1 of paragraph 1 of page 2
-				set first_page to (result - 1)
+				set second_page to result
+				try
+					set second_page to second_page as number
+				end try
+				if class of second_page is integer
+					set first_page to (second_page - 1)
+				else
+					set first_page to "?"
+				end if
 			else
 				set first_page to "?"
 			end if
