@@ -68,12 +68,18 @@ tell application "Finder"
 		
 		-- finish xml
 		tell me to write_to_xml for end_xml
-		-- add comment to folder to keep track of processed folders -- DOESN'T WORK!!!
+		-- add comment to folder to keep track of processed folders
 		tell issue_folder to set comment to "processed"
 		tell me to activate
-		display dialog "Next issue?" buttons {"Yes", "No"} default button "Yes"
+		display dialog "Next issue?" buttons {"Yes", "No", "Inspect XML"} default button "Yes"
 		try
 			if button returned of the result is "No" then
+				exit repeat
+			else if button returned of the result is "Inspect XML" then
+				tell application "textmate"
+					activate
+					open file_path as alias
+				end tell
 				exit repeat
 			end if
 		end try
@@ -97,8 +103,8 @@ end confirm_remote
 
 on confirm_page()
 	set the location_list to {"First", "Second"}
-	set confirm_page to (choose from list location_list with prompt ("Confirm location of pagenumber:") default items {page_location}) as string
-	return confirm_page
+	set the_page to (choose from list location_list with prompt ("Confirm location of pagenumber:") default items {page_location}) as string
+	return the_page
 end confirm_page
 
 -- get issue_number from foldername
@@ -309,17 +315,20 @@ on write_pages for this_pdf
 				set first_page to result
 			else if ((page_location is "second") and (no_pages > 1))
 				get word 1 of paragraph 1 of page 2
-				set second_page to result
+				set second_page_left to result
+				get word -1 of paragraph 1 of page 2
+				set second_page_right to result
 				try
-					set second_page to second_page as number
+					set second_page_left to second_page_left as number
+					set second_page_right to second_page_right as number
 				end try
-				if class of second_page is integer
-					set first_page to (second_page - 1)
+				if class of second_page_left is integer
+					set first_page to (second_page_left - 1)
+				else if class of second_page_right is integer
+					set first_page to (second_page_right - 1)
 				else
-					set first_page to "?"
+					set first_page to "0"
 				end if
-			else
-				set first_page to "?"
 			end if
 			tell me to activate
 			display dialog "Confirm first page" buttons "OK" default button "OK" default answer first_page
@@ -333,6 +342,8 @@ on write_pages for this_pdf
 	write_to_xml for page_range_xml
 end write_pages
 
+
+-- subsubroutines for 
 
 -- retrieve and write optional with default "empty-text" and choice between store and write
 on write_more(this_pdf, content_type, default_value, return_or_write)
@@ -384,6 +395,7 @@ end write_galley
 -- write_to_xml
 on write_to_xml for this_xml
 	global file_path
+	global file_ref
 	set file_ref to open for access file_path with write permission
 	write this_xml to file_ref starting at eof
 	close access file_ref
