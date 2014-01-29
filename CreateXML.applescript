@@ -13,6 +13,9 @@ set main_folder to pick_folder()
 set import_location to confirm_remote()
 -- confirm page-location
 set page_location to confirm_page()
+-- variable used to grab title
+set title_location to 1
+
 
 -- create issue xml for each folder
 tell application "Finder"
@@ -23,6 +26,7 @@ tell application "Finder"
 		tell me to set volume_number to compute_volnum for issue_number
 		global volume_year
 		tell me to set volume_year to compute_year for volume_number
+		if volume_year >= 89 then tell me to set title_location to 2
 		tell me to set pub_date to compute_date(issue_number, volume_number, volume_year)
 		set begin_xml to "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" & return & "<!DOCTYPE issues PUBLIC \"-//PKP//OJS Articles and Issues XML//EN\" \"http://pkp.sfu.ca/ojs/dtds/2.4/native.dtd\">" & return & return & tab & "<issue published=\"true\" identification=\"num_vol_year\" current=\"false\">" & return & tab & tab & "<volume>" & (volume_number as string) & "</volume>" & return & tab & tab & "<number>" & (issue_number as string) & "</number>" & return & tab & tab & "<year>" & (volume_year as string) & "</year>" & return & tab & tab & "<date_published>" & pub_date & "</date_published>" & return & tab & tab & "<open_access/>" & return
 		display dialog "setting issue-id as:" default answer begin_xml
@@ -56,7 +60,7 @@ tell application "Finder"
 			end tell
 			tell me to handle_section for current_pdf
 			tell me to write_to_xml for tab & tab & tab & "<article locale=\"en_US\" language=\"en\">" & return
-			tell me to write_title for current_pdf
+			tell me to write_title for current_pdf at title_location
 			tell me to write_more(current_pdf, "abstract", "Without abstract", "write")
 			tell me to write_author for current_pdf
 			tell me to write_add_authors for current_pdf
@@ -177,10 +181,10 @@ end handle_section
 
 
 -- retrieve and write title
-on write_title for this_pdf
+on write_title for this_pdf at that_place
 	tell application "Skim"
 		tell this_pdf
-			get paragraph 1 of page 1
+			get paragraph that_place of page 1
 			set this_title to result as string
 			set AppleScript's text item delimiters to return
 			tell this_title to get its text items
@@ -310,15 +314,19 @@ on write_pages for this_pdf
 			get properties
 			get info of result
 			set no_pages to page count of result
+			set {first_page, second_page_left, second_page_right} to {"", "", ""}
 			if (page_location is "first")
-				get paragraph -1 of page 1
-				set first_page to result
-			else if ((page_location is "second") and (no_pages > 1))
-				get word 1 of paragraph 1 of page 2
-				set second_page_left to result
-				get word -1 of paragraph 1 of page 2
-				set second_page_right to result
 				try
+					get paragraph -1 of page 1
+					set first_page to result
+				end try
+			else if ((page_location is "second") and (no_pages > 1))
+				try
+					get word 1 of paragraph 1 of page 2
+					set second_page_left to result
+					get word -1 of paragraph 1 of page 2
+					set second_page_right to result
+				
 					set second_page_left to second_page_left as number
 					set second_page_right to second_page_right as number
 				end try
@@ -329,6 +337,8 @@ on write_pages for this_pdf
 				else
 					set first_page to "0"
 				end if
+			else
+				set first_page to "0"
 			end if
 			tell me to activate
 			display dialog "Confirm first page" buttons "OK" default button "OK" default answer first_page
