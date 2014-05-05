@@ -26,7 +26,7 @@ tell application "Finder"
 		tell me to set volume_number to compute_volnum for issue_number
 		global volume_year
 		tell me to set volume_year to compute_year for volume_number
-		if volume_year >= 89 then tell me to set title_location to 2
+		if volume_year >= 1989 then tell me to set title_location to 2
 		tell me to set pub_date to compute_date(issue_number, volume_number, volume_year)
 		set begin_xml to "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" & return & "<!DOCTYPE issues PUBLIC \"-//PKP//OJS Articles and Issues XML//EN\" \"http://pkp.sfu.ca/ojs/dtds/2.4/native.dtd\">" & return & return & tab & "<issue published=\"true\" identification=\"num_vol_year\" current=\"false\">" & return & tab & tab & "<volume>" & (volume_number as string) & "</volume>" & return & tab & tab & "<number>" & (issue_number as string) & "</number>" & return & tab & tab & "<year>" & (volume_year as string) & "</year>" & return & tab & tab & "<date_published>" & pub_date & "</date_published>" & return & tab & tab & "<open_access/>" & return
 		display dialog "setting issue-id as:" default answer begin_xml
@@ -40,6 +40,10 @@ tell application "Finder"
 		close access file_ref
 		-- select all pdfs in folder for issue
 		set current_batch to (document files of entire contents of issue_folder whose name ends with "pdf")
+		set first_of_batch to name of first item of current_batch
+			if first_of_batch starts with "00" then
+				set current_batch to items 2 thru (length of current_batch) of current_batch
+			end if
 		global current_section
 		set current_section to "" -- will be used by handle_section subroutine
 		repeat with i from 1 to count (every item of current_batch)
@@ -359,7 +363,7 @@ end write_pages
 on write_more(this_pdf, content_type, default_value, return_or_write)
 	global volume_year
 	global volume_number
-	if ((content_type is "email" and volume_year < 1990) or (content_type is "abstract" and volume_number < 120)) then
+	if ((content_type is "email" and volume_year < 1990) or (content_type is "abstract" and volume_year < 1990)) then
 		set this_content to default_value
 	else
 		set the clipboard to ""
