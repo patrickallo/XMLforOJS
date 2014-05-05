@@ -6,6 +6,8 @@ property alphalist : "aàbcdeéèêfghijklmnoôpqrstuûvwxyz"'s items & reverse 
 property alphalength: 32
 --property used to find pagenr
 property page_location : "first"
+-- property for embargo
+property embargo_year: 2008
 
 -- choosing main folder to start
 set main_folder to pick_folder()
@@ -69,7 +71,7 @@ tell application "Finder"
 			tell me to write_author for current_pdf
 			tell me to write_add_authors for current_pdf
 			tell me to write_pages for current_pdf
-			tell me to write_galley for file_location
+			if volume_year <= embargo_year then tell me to write_galley for file_location
 			tell me to write_to_xml for tab & tab & tab & "</article>" & return
 			tell application "Skim" to close current_pdf
 		end repeat
@@ -84,7 +86,7 @@ tell application "Finder"
 			if button returned of the result is "No" then
 				exit repeat
 			else if button returned of the result is "Inspect XML" then
-				tell application "textmate"
+				tell application "textmate 2"
 					activate
 					open file_path as alias
 				end tell
